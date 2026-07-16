@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ahorcado Mundialista — Copa Mundial 2026</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap');
+
+:root{
+  --pitch-1:#123A26;
+  --pitch-2:#1B5E3A;
+  --line:#EAF3EC;
+  --gold:#E7B93A;
+  --gold-soft:#F3D77E;
+  --danger:#D6524A;
+  --danger-soft:#F0A69E;
+  --ink:#0A2118;
+  --panel:#0F2E1F;
+  --panel-2:#154531;
+  --muted:#9FC2AC;
+}
+
+*{ box-sizing:border-box; }
+
+html,body{
+  margin:0; min-height:100vh;
+  background:
+    repeating-linear-gradient(90deg, var(--pitch-1) 0 60px, var(--pitch-2) 60px 120px);
+  color:var(--line);
+  font-family:'Work Sans', sans-serif;
+}
+
+.app{
+  max-width:760px;
+  margin:0 auto;
+  padding:26px 16px 60px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:18px;
+}
+
+.header{ text-align:center; }
+.eyebrow{
+  font-family:'Oswald', sans-serif;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  font-size:.72rem;
+  color:var(--gold-soft);
+  font-weight:500;
+}
+h1{
+  font-family:'Oswald', sans-serif;
+  font-weight:700;
+  font-size:clamp(1.7rem, 5vw, 2.5rem);
+  margin:.2em 0 .05em;
+  letter-spacing:.01em;
+}
+.subtitle{ color:var(--muted); font-size:.9rem; max-width:480px; margin:0 auto; }
+
+.hud{
+  display:flex; gap:14px; flex-wrap:wrap; justify-content:center;
+}
+.chip{
+  background:var(--panel);
+  border:1px solid rgba(234,243,236,.1);
+  border-radius:10px;
+  padding:8px 14px;
+  font-family:'Oswald', sans-serif;
+  font-size:.85rem;
+  letter-spacing:.04em;
+  display:flex; align-items:center; gap:8px;
+}
+.chip .v{ color:var(--gold); font-weight:600; }
+.lives{ display:flex; gap:4px; }
+.life{ width:16px; height:16px; }
+
+.board{
+  width:100%;
+  max-width:420px;
+  aspect-ratio:4/3;
+  background:var(--panel);
+  border-radius:16px;
+  border:1px solid rgba(234,243,236,.08);
+  display:flex; align-items:center; justify-content:center;
+  padding:12px;
+}
+
+.clue-box{
+  width:100%;
+  background:var(--panel);
+  border:1px solid rgba(234,243,236,.08);
+  border-radius:14px;
+  padding:16px 20px;
+  text-align:center;
+}
+.clue-tag{
+  font-family:'Oswald',sans-serif;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  font-size:.68rem;
+  color:var(--gold-soft);
+  margin-bottom:6px;
+}
+.clue-text{ font-size:.92rem; color:var(--line); line-height:1.4; }
+
+.word-display{
+  display:flex; flex-wrap:wrap; gap:8px; justify-content:center;
+  font-family:'Oswald', sans-serif;
+  font-size:clamp(1.3rem, 4vw, 1.8rem);
+  letter-spacing:.06em;
+}
+.word-display .gap{ width:14px; }
+.letter-slot{
+  min-width:.9em;
+  border-bottom:3px solid var(--gold);
+  text-align:center;
+  padding-bottom:2px;
+  color:var(--line);
+}
+
+.keyboard{
+  display:grid;
+  grid-template-columns:repeat(9, 1fr);
+  gap:6px;
+  width:100%;
+  max-width:520px;
+}
+.key{
+  font-family:'Oswald', sans-serif;
+  font-weight:500;
+  background:var(--panel-2);
+  border:1px solid rgba(234,243,236,.12);
+  color:var(--line);
+  border-radius:8px;
+  padding:10px 0;
+  cursor:pointer;
+  font-size:.95rem;
+  transition:background .15s ease, transform .1s ease, opacity .15s ease;
+}
+.key:hover:not(:disabled){ background:var(--gold); color:var(--ink); }
+.key:active:not(:disabled){ transform:scale(.94); }
+.key:disabled{ opacity:.3; cursor:default; }
+.key.correct{ background:var(--pitch-2); border-color:var(--gold); color:var(--gold-soft); opacity:.55; }
+.key.wrong{ background:var(--danger); border-color:var(--danger-soft); opacity:.55; color:var(--ink); }
+
+.feedback{ min-height:1.3em; font-size:.85rem; font-weight:600; text-align:center; }
+.feedback.ok{ color:var(--gold-soft); }
+.feedback.bad{ color:var(--danger-soft); }
+
+.overlay{
+  position:fixed; inset:0;
+  background:rgba(5,20,12,.88);
+  display:none;
+  align-items:center; justify-content:center;
+  padding:20px;
+  z-index:10;
+}
+.overlay.show{ display:flex; }
+.overlay-card{
+  background:var(--panel);
+  border:1px solid rgba(234,243,236,.12);
+  border-radius:20px;
+  padding:30px 26px;
+  max-width:480px;
+  width:100%;
+  text-align:center;
+  display:flex; flex-direction:column; gap:14px;
+}
+.overlay-title{
+  font-family:'Oswald', sans-serif;
+  font-size:1.7rem;
+  font-weight:700;
+  color:var(--gold);
+}
+.overlay-sub{ color:var(--muted); font-size:.9rem; }
+.overlay-list{
+  max-height:240px; overflow:auto;
+  display:flex; flex-direction:column; gap:6px;
+  text-align:left;
+  font-size:.82rem;
+}
+.overlay-list .row{ background:var(--panel-2); border-radius:8px; padding:8px 12px; }
+.overlay-list b{ color:var(--gold-soft); }
+.btn-main{
+  font-family:'Oswald', sans-serif;
+  font-weight:600;
+  background:var(--gold);
+  color:var(--ink);
+  border:none;
+  border-radius:10px;
+  padding:12px 20px;
+  cursor:pointer;
+  font-size:1rem;
+}
+.btn-main:hover{ filter:brightness(1.06); }
+
+@media (max-width:480px){
+  .keyboard{ grid-template-columns:repeat(7,1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div class="eyebrow">Ahorcado Mundialista</div>
+    <h1>Copa Mundial 2026</h1>
+    <p class="subtitle">Adiviná la palabra de cada pista antes de que el marcador se complete. Cada error suma una parte del dibujo — al sexto error, se acaba el partido.</p>
+  </div>
+
+  <div class="hud">
+    <div class="chip">Pregunta <span class="v" id="qNum">1</span>/<span id="qTotal">12</span></div>
+    <div class="chip">Puntaje <span class="v" id="scoreVal">0</span></div>
+    <div class="chip">Vidas <span class="v" id="livesVal">6</span></div>
+  </div>
+
+  <div class="board">
+    <svg viewBox="0 0 200 150" width="100%" height="100%">
+      <!-- travesaño y poste (siempre visibles, marco del arco) -->
+      <line x1="20" y1="140" x2="20" y2="15" stroke="#EAF3EC" stroke-width="4" stroke-linecap="round"/>
+      <line x1="20" y1="15" x2="110" y2="15" stroke="#EAF3EC" stroke-width="4" stroke-linecap="round"/>
+      <line x1="108" y1="15" x2="108" y2="30" stroke="#EAF3EC" stroke-width="4" stroke-linecap="round"/>
+      <line x1="10" y1="140" x2="70" y2="140" stroke="#EAF3EC" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+
+      <!-- partes del cuerpo, ocultas por defecto -->
+      <circle id="part-head" cx="108" cy="42" r="12" fill="none" stroke="#E7B93A" stroke-width="4" visibility="hidden"/>
+      <line id="part-torso" x1="108" y1="54" x2="108" y2="95" stroke="#E7B93A" stroke-width="4" stroke-linecap="round" visibility="hidden"/>
+      <line id="part-armL" x1="108" y1="65" x2="88" y2="85" stroke="#E7B93A" stroke-width="4" stroke-linecap="round" visibility="hidden"/>
+      <line id="part-armR" x1="108" y1="65" x2="128" y2="85" stroke="#E7B93A" stroke-width="4" stroke-linecap="round" visibility="hidden"/>
+      <line id="part-legL" x1="108" y1="95" x2="92" y2="125" stroke="#D6524A" stroke-width="4" stroke-linecap="round" visibility="hidden"/>
+      <line id="part-legR" x1="108" y1="95" x2="124" y2="125" stroke="#D6524A" stroke-width="4" stroke-linecap="round" visibility="hidden"/>
+    </svg>
+  </div>
+
+  <div class="clue-box">
+    <div class="clue-tag" id="clueTag">Pista</div>
+    <div class="clue-text" id="clueText">Cargando…</div>
+  </div>
+
+  <div class="word-display" id="wordDisplay"></div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <div class="keyboard" id="keyboard"></div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-card">
+    <div class="overlay-title" id="overlayTitle">¡Fin del partido!</div>
+    <div class="overlay-sub" id="overlaySub"></div>
+    <div class="overlay-list" id="overlayList"></div>
+    <button class="btn-main" id="btnRestart">Jugar de nuevo</button>
+  </div>
+</div>
+
+<script>
+const preguntas = [
+  {palabra:"ESTADIO AZTECA", pista:"Recinto de Ciudad de México que será el primer estadio en la historia en albergar partidos de tres Copas del Mundo distintas (1970, 1986 y 2026)."},
+  {palabra:"METLIFE STADIUM", pista:"Estadio de Nueva Jersey elegido para disputar la gran final, el domingo 19 de julio de 2026."},
+  {palabra:"TORONTO", pista:"Ciudad canadiense sede, donde Canadá debutó como local en la fase de grupos."},
+  {palabra:"VANCOUVER", pista:"Ciudad canadiense que había sido descartada como sede en 2018 y fue reincorporada en abril de 2022."},
+  {palabra:"MEXICO", pista:"Primer país en la historia en organizar tres Copas del Mundo: 1970, 1986 y 2026."},
+  {palabra:"CANADA", pista:"Uno de los tres países anfitriones, sede de una Copa del Mundo por primera vez en su historia."},
+  {palabra:"SUDAFRICA", pista:"Rival de México en el partido inaugural del torneo, disputado el 11 de junio en el Estadio Azteca."},
+  {palabra:"DALLAS", pista:"Ciudad de Texas que integra las once sedes estadounidenses del torneo, la mayor cantidad de los tres países."},
+  {palabra:"WASHINGTON", pista:"Ciudad donde se realizó el sorteo de los doce grupos, el 5 de diciembre de 2025."},
+  {palabra:"DIECISEISAVOS", pista:"Nueva instancia eliminatoria que se incorpora por primera vez debido al formato de 48 selecciones."},
+  {palabra:"ARGELIA", pista:"Uno de los rivales de Argentina en la fase de grupos, dentro del Grupo J."},
+  {palabra:"JORDANIA", pista:"Selección debutante en una Copa del Mundo, integrante del Grupo J junto a Argentina."},
+];
+
+const MAX_ERRORS = 6;
+const bodyParts = ['part-head','part-torso','part-armL','part-armR','part-legL','part-legR'];
+const teclado = "QWERTYUIOPASDFGHJKLÑZXCVBNM".split('');
+
+let state = {};
+
+function normalize(str){
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+}
+
+function buildKeyboard(){
+  const kb = document.getElementById('keyboard');
+  kb.innerHTML = '';
+  teclado.forEach(letra=>{
+    const btn = document.createElement('button');
+    btn.className = 'key';
+    btn.textContent = letra;
+    btn.id = 'key-' + letra;
+    btn.addEventListener('click', ()=>guessLetter(letra));
+    kb.appendChild(btn);
+  });
+}
+
+function shuffle(arr){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function initGame(){
+  state = {
+    order: shuffle(preguntas.map((_,i)=>i)),
+    qIndex: 0,
+    score: 0,
+    errors: 0,
+    guessed: new Set(),
+    ended: false,
+    history: []
+  };
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('qTotal').textContent = preguntas.length;
+  buildKeyboard();
+  resetBodyParts();
+  loadQuestion();
+  updateHud();
+}
+
+function resetBodyParts(){
+  bodyParts.forEach(id=>{
+    document.getElementById(id).setAttribute('visibility','hidden');
+  });
+}
+
+function currentQ(){
+  return preguntas[state.order[state.qIndex]];
+}
+
+function loadQuestion(){
+  state.guessed = new Set();
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.querySelectorAll('.key').forEach(k=>{ k.disabled=false; k.classList.remove('correct','wrong'); });
+
+  const q = currentQ();
+  document.getElementById('clueTag').textContent = 'Pista ' + (state.qIndex+1) + ' de ' + preguntas.length;
+  document.getElementById('clueText').textContent = q.pista;
+  document.getElementById('qNum').textContent = state.qIndex + 1;
+  renderWord();
+}
+
+function renderWord(){
+  const q = currentQ();
+  const word = normalize(q.palabra);
+  const disp = document.getElementById('wordDisplay');
+  disp.innerHTML = '';
+  for(const ch of word){
+    if(ch === ' '){
+      const gap = document.createElement('div');
+      gap.className = 'gap';
+      disp.appendChild(gap);
+      continue;
+    }
+    const slot = document.createElement('div');
+    slot.className = 'letter-slot';
+    slot.textContent = state.guessed.has(ch) ? ch : '_';
+    disp.appendChild(slot);
+  }
+}
+
+function isWordComplete(){
+  const word = normalize(currentQ().palabra);
+  return [...word].every(ch => ch === ' ' || state.guessed.has(ch));
+}
+
+function guessLetter(letra){
+  if(state.ended) return;
+  const word = normalize(currentQ().palabra);
+  const btn = document.getElementById('key-' + letra);
+  if(btn.disabled) return;
+  btn.disabled = true;
+
+  if(word.includes(letra)){
+    state.guessed.add(letra);
+    btn.classList.add('correct');
+    renderWord();
+    if(isWordComplete()){
+      state.score += 10;
+      state.history.push({q: currentQ(), status:'ok'});
+      showFeedback('¡Correcto! Vas por ' + (state.qIndex+1) + '/' + preguntas.length, 'ok');
+      updateHud();
+      setTimeout(nextQuestion, 1000);
+    } else {
+      updateHud();
+    }
+  } else {
+    state.errors++;
+    btn.classList.add('wrong');
+    if(state.errors <= MAX_ERRORS){
+      document.getElementById(bodyParts[state.errors-1]).setAttribute('visibility','visible');
+    }
+    updateHud();
+    if(state.errors >= MAX_ERRORS){
+      state.history.push({q: currentQ(), status:'fail'});
+      endGame(false);
+    } else {
+      showFeedback('Fallaste. Vidas restantes: ' + (MAX_ERRORS - state.errors), 'bad');
+    }
+  }
+}
+
+function nextQuestion(){
+  if(state.ended) return;
+  state.qIndex++;
+  if(state.qIndex >= state.order.length){
+    endGame(true);
+    return;
+  }
+  loadQuestion();
+}
+
+function showFeedback(msg, kind){
+  const fb = document.getElementById('feedback');
+  fb.textContent = msg;
+  fb.className = 'feedback ' + kind;
+}
+
+function updateHud(){
+  document.getElementById('scoreVal').textContent = state.score;
+  document.getElementById('livesVal').textContent = Math.max(0, MAX_ERRORS - state.errors);
+}
+
+function endGame(won){
+  state.ended = true;
+  const overlay = document.getElementById('overlay');
+  const title = document.getElementById('overlayTitle');
+  const sub = document.getElementById('overlaySub');
+  const list = document.getElementById('overlayList');
+
+  if(won){
+    title.textContent = '¡Ganaste el partido!';
+    sub.textContent = 'Respondiste las ' + preguntas.length + ' preguntas con ' + state.score + ' puntos.';
+  } else {
+    title.textContent = 'Fin del partido';
+    sub.textContent = 'Se completó el dibujo. Llegaste a la pregunta ' + (state.qIndex+1) + ' de ' + preguntas.length + ' con ' + state.score + ' puntos.';
+  }
+
+  list.innerHTML = '';
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = `<b>Respuesta pendiente:</b> ${currentQ().palabra}`;
+  if(!won) list.appendChild(row);
+
+  overlay.classList.add('show');
+}
+
+document.getElementById('btnRestart').addEventListener('click', initGame);
+
+document.addEventListener('keydown', e=>{
+  const letra = normalize(e.key);
+  if(letra.length === 1 && teclado.includes(letra)){
+    guessLetter(letra);
+  }
+});
+
+initGame();
+</script>
+</body>
+</html>
